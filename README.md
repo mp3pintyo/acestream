@@ -1,141 +1,144 @@
-# acestream – Ace Stream a TV-n, egy kattintással
+# acestream – Ace Stream on your TV, in one click
 
-Ace Stream adások lejátszása a smart TV-n (DLNA-n keresztül), Windowsról.
-Nem kell hozzá semmit telepíteni a TV-re, és nincs átkódolás: a TV a gépen futó
-Ace Stream motortól kapja az eredeti streamet.
+**English** | [Magyar](README.hu.md)
 
-LG webOS TV-n tesztelve (LG OLED65C4). Más, DLNA-t támogató TV-vel (Samsung, Sony, Philips stb.)
-valószínűleg ugyanígy működik, de ezt nem próbáltam ki.
+Play Ace Stream broadcasts on your smart TV over DLNA, from a Windows PC.
+You don't install anything on the TV and nothing is transcoded: the TV receives the original
+stream from the Ace Stream engine running on your PC.
+
+Tested on an LG webOS TV (LG OLED65C4). Other DLNA-capable TVs (Samsung, Sony, Philips, etc.)
+will probably work the same way, but I haven't tested them.
 
 ```
-acestream://…  ──►  Ace Stream motor (PC, 6878)  ──►  ace_tv_proxy.py (PC, 6879)  ──►  LG TV (DLNA)
+acestream://…  ──►  Ace Stream engine (PC, 6878)  ──►  ace_tv_proxy.py (PC, 6879)  ──►  LG TV (DLNA)
 ```
 
-## Mi ez, és miért kell?
+## What is this, and why do you need it?
 
-Az Ace Stream egy P2P alapú streamelő rendszer. A Windowsos **Ace Player** csak a gépen
-játssza le az adást, a TV-re nem tudja átküldeni.
+Ace Stream is a P2P streaming system. The Windows **Ace Player** only plays the stream on the PC
+and can't send it to a TV.
 
-A háttérben futó **Ace Stream motor** viszont HTTP-n is kiadja a streamet, és ezt elvileg egy
-DLNA-képes TV is meg tudja nyitni. A gyakorlatban két dolog akadályozza:
+The **Ace Stream engine** running in the background, however, also serves the stream over HTTP,
+and in principle a DLNA-capable TV can open it. In practice two things get in the way:
 
-1. A TV-nek meg kell mondani, mit játsszon le. Ezt a `cast-to-lgtv.ps1` intézi: megkeresi a TV-t
-   a hálózaton, és DLNA (UPnP AVTransport) paranccsal ráküldi a stream címét.
-2. Az LG TV lejátszás előtt egy `HEAD` kéréssel ellenőrzi az URL-t, amire az Ace motor
-   `501 Not Implemented` hibát ad. Emiatt a TV el sem indítja a lejátszást. Az `ace_tv_proxy.py`
-   egy kis proxy a motor előtt: a `HEAD`-re helyesen válaszol, a `GET`-et pedig továbbadja a
-   motornak (az átirányításokkal együtt), és DLNA-fejlécekkel küldi tovább a videót.
+1. Something has to tell the TV what to play. `cast-to-lgtv.ps1` does this: it finds the TV on
+   the network and sends it the stream URL with a DLNA (UPnP AVTransport) command.
+2. Before playing, the LG TV checks the URL with an HTTP `HEAD` request. The Ace engine answers
+   it with `501 Not Implemented`, so the TV never starts playback. `ace_tv_proxy.py` is a small
+   proxy in front of the engine. It answers `HEAD` correctly, passes `GET` on to the engine
+   (following its redirects), and returns the video with DLNA headers.
 
-A PC-n futó Ace Player közben nyugodtan mehet tovább: a motor ugyanazt az adást
-egyszerre több lejátszónak is ki tudja adni.
+You can keep watching in Ace Player on the PC at the same time: the engine can serve the same
+broadcast to several players at once.
 
-## Mi kell hozzá?
+## Requirements
 
 | | |
 |---|---|
-| **Windows 10 / 11** | A TV-keresés a Windows beépített UPnP-komponensét használja. |
-| **Ace Stream Media** | <https://acestream.org> – a telepítés után futnia kell (a `ace_engine.exe` a 6878-as porton). |
-| **Python 3.8+** | <https://www.python.org/downloads/> – a `python.exe` legyen a PATH-on. Külső csomag nem kell. |
-| **DLNA-képes TV** | Ugyanazon a helyi hálózaton, mint a gép (kábel vagy Wi-Fi mindegy). |
+| **Windows 10 / 11** | Finding the TV relies on Windows' built-in UPnP component. |
+| **Ace Stream Media** | <https://acestream.org>. It must be running after installation (`ace_engine.exe` on port 6878). |
+| **Python 3.8+** | <https://www.python.org/downloads/>. `python.exe` must be on the PATH. No extra packages needed. |
+| **DLNA-capable TV** | On the same local network as the PC (cable or Wi-Fi). |
 
-A TV-n nem kell semmit telepíteni. LG-n a DLNA-lejátszás alapból be van kapcsolva.
+Nothing needs to be installed on the TV. DLNA playback is enabled by default on LG TVs.
 
-## Telepítés
+## Installation
 
 ```powershell
 git clone https://github.com/mp3pintyo/acestream.git
 cd acestream
 ```
 
-(vagy töltsd le ZIP-ként, és csomagold ki egy mappába)
+(or download it as a ZIP and extract it to a folder)
 
-**Tűzfal:** az első indításkor a Windows megkérdezheti, hogy a Python fogadhat-e kapcsolatokat
-a hálózatról. Engedélyezd azon a hálózattípuson, amelyiken a géped van. Ha a hálózatod
-*Nyilvános* (Public), akkor azt is pipáld be, különben a TV nem éri el a proxyt.
-Az Ace Stream motornak a telepítője már létrehozza a saját tűzfalszabályát.
+**Firewall:** on first run Windows may ask whether Python may accept connections from the
+network. Allow it for the network type your PC is on. If your network is *Public*, tick that
+too, otherwise the TV can't reach the proxy. The Ace Stream installer already creates a
+firewall rule for the engine itself.
 
-## Használat
+## Usage
 
-### A legegyszerűbb: dupla kattintás
+> The scripts' console messages are in Hungarian. The commands and parameters below work the same regardless.
 
-1. Indítsd el az Ace Streamet (vagy az Ace Playert) a gépen, és kapcsold be a TV-t.
-2. Kattints duplán az **`Ace a TV-re.cmd`** fájlra.
-3. Másold be az `acestream://...` linket (vagy csak a 40 karakteres ID-t), és nyomj Entert.
-4. Pár másodperc pufferelés után a TV-n elindul az adás.
+### The easy way: double-click
 
-Paraméterrel is indítható:
+1. Start Ace Stream (or Ace Player) on the PC and turn on the TV.
+2. Double-click **`Ace a TV-re.cmd`** ("Ace to the TV").
+3. Paste the `acestream://...` link (or just the 40-character ID) and press Enter.
+4. After a few seconds of buffering the broadcast starts on the TV.
+
+You can also pass a parameter:
 
 ```bat
 "Ace a TV-re.cmd" acestream://0123456789abcdef0123456789abcdef01234567
 "Ace a TV-re.cmd" stop
 ```
 
-### PowerShellből
+### From PowerShell
 
 ```powershell
-# Adás küldése a TV-re
+# Send a broadcast to the TV
 .\cast-to-lgtv.ps1 acestream://0123456789abcdef0123456789abcdef01234567
 
-# A hálózaton talált DLNA-lejátszók listája
+# List the DLNA players found on the network
 .\cast-to-lgtv.ps1 -List
 
-# Ha több TV / lejátszó van, név alapján választhatsz
+# With several TVs / players, pick one by name
 .\cast-to-lgtv.ps1 <ID> -TvName "OLED"
 
-# Lejátszás leállítása a TV-n
+# Stop playback on the TV
 .\cast-to-lgtv.ps1 -Stop
 ```
 
-Ha a PowerShell nem engedi futtatni a szkriptet:
+If PowerShell won't run the script:
 `powershell -ExecutionPolicy Bypass -File .\cast-to-lgtv.ps1 <ID>`
 
-Csatornát váltani úgy tudsz, hogy egyszerűen elküldöd az új linket. A TV leállítja az előzőt,
-és az újat kezdi játszani.
+To switch channels, just send the new link. The TV stops the previous broadcast and starts the
+new one.
 
-## Fájlok
+## Files
 
-| Fájl | Mit csinál |
+| File | What it does |
 |---|---|
-| `Ace a TV-re.cmd` | Dupla kattintással indítható. Bekéri a linket, és meghívja a PowerShell-szkriptet. |
-| `cast-to-lgtv.ps1` | Megkeresi a TV-t, ellenőrzi, hogy fut-e az Ace motor, ha kell, elindítja a proxyt (rejtett ablakban), majd DLNA-n ráküldi a streamet a TV-re. |
-| `ace_tv_proxy.py` | HTTP proxy a 6879-es porton. A `http://<PC-IP>:6879/ace/<ID>.ts` címre érkező kéréseket továbbítja az Ace motornak. Csak a Python standard könyvtárát használja. |
+| `Ace a TV-re.cmd` | Double-click launcher. Asks for the link and calls the PowerShell script. |
+| `cast-to-lgtv.ps1` | Finds the TV, checks that the Ace engine is running, starts the proxy if needed (in a hidden window), then sends the stream to the TV over DLNA. |
+| `ace_tv_proxy.py` | HTTP proxy on port 6879. Forwards requests for `http://<PC-IP>:6879/ace/<ID>.ts` to the Ace engine. Uses only the Python standard library. |
 
-## Hogyan működik részletesen?
+## How it works in detail
 
-1. A `cast-to-lgtv.ps1` a Windows `UPnP.UPnPDeviceFinder` COM-objektumával megkeresi a hálózaton
-   a `MediaRenderer` típusú eszközöket. Ha van LG, azt választja.
-2. Ellenőrzi, hogy fut-e az Ace Stream motor (`http://127.0.0.1:6878`).
-3. Ha a 6879-es porton még nem fut, elindítja a proxyt.
-4. A TV-nek a `SetAVTransportURI` paranccsal átadja a `http://<PC-IP>:6879/ace/<ID>.ts`
-   címet (DIDL-Lite metaadattal, `video/mp2t` típussal), majd kiadja a `Play` parancsot.
-5. A TV meghívja a proxyt. A proxy az Ace motortól a
-   `/ace/getstream?id=<ID>&pid=<véletlen>` címen kéri le az adást. A véletlen `pid` miatt
-   a TV külön lejátszási munkamenetet kap, így a PC-n futó Ace Player mellett is működik.
-6. A motor MPEG-TS-ben adja a streamet (pl. H.264 videó + AC3 hang), és a proxy ezt
-   változtatás nélkül továbbítja. Átkódolás nincs, ezért a gépet sem terheli.
+1. `cast-to-lgtv.ps1` uses Windows' `UPnP.UPnPDeviceFinder` COM object to find `MediaRenderer`
+   devices on the network. If there's an LG, it picks that one.
+2. It checks that the Ace Stream engine is running (`http://127.0.0.1:6878`).
+3. If nothing is listening on port 6879 yet, it starts the proxy.
+4. It hands the TV the URL `http://<PC-IP>:6879/ace/<ID>.ts` with `SetAVTransportURI`
+   (with DIDL-Lite metadata, type `video/mp2t`), then sends `Play`.
+5. The TV calls the proxy. The proxy requests the broadcast from the Ace engine at
+   `/ace/getstream?id=<ID>&pid=<random>`. The random `pid` gives the TV its own playback session,
+   so it works alongside Ace Player on the PC.
+6. The engine delivers the stream as MPEG-TS (e.g. H.264 video + AC3 audio), and the proxy
+   passes it through unchanged. There's no transcoding, so it puts no load on the PC.
 
-## Hibaelhárítás
+## Troubleshooting
 
-**„Nem találok TV-t a hálózaton”**
-Kapcsold be a TV-t (nem elég készenlétben), és ellenőrizd, hogy ugyanazon a hálózaton van-e.
-A `.\cast-to-lgtv.ps1 -List` megmutatja, mit lát a gép.
+**"Nem talalok TV-t a halozaton" (TV not found on the network)**
+Turn the TV fully on (standby isn't enough) and check that it's on the same network.
+`.\cast-to-lgtv.ps1 -List` shows what the PC can see.
 
-**„Az Ace Stream motor nem fut”**
-Indítsd el az Ace Streamet. Elég, ha a tálcán ott van az ikonja.
+**"Az Ace Stream motor nem fut" (Ace Stream engine not running)**
+Start Ace Stream. It's enough if its icon is in the system tray.
 
-**A TV-n nem történik semmi, vagy csak tölt**
-- Valószínűleg a tűzfal blokkolja a Pythont. Nézd meg a *Windows Defender tűzfal → Alkalmazás
-  engedélyezése* menüben, hogy a `python.exe` engedélyezve van-e a te hálózattípusodon
-  (Nyilvános / Magán).
-- Próbáld ki, hogy maga az adás él-e: nyisd meg a linket az Ace Playerben a gépen.
-- Küldd el még egyszer: néha az első próbálkozásra a TV még „beragad”.
+**Nothing happens on the TV, or it keeps loading**
+- The firewall is most likely blocking Python. Under *Windows Defender Firewall → Allow an app*,
+  check that `python.exe` is allowed on your network type (Public / Private).
+- Check that the broadcast itself is live: open the link in Ace Player on the PC.
+- Send it again: sometimes the TV gets "stuck" on the first attempt.
 
-**Megáll a kép a TV-n**
-P2P stream, ezért a minőség a forrástól és a többi nézőtől függ. Ha az Ace Playerben is akad,
-akkor a TV-n is fog.
+**The picture freezes on the TV**
+It's a P2P stream, so quality depends on the source and the other viewers. If it stutters in Ace
+Player, it will stutter on the TV too.
 
-**Hogyan állítom le a háttérben futó proxyt?**
-A proxy rejtett ablakban fut tovább, amíg ki nem lépsz a Windowsból, vagy le nem állítod:
+**How do I stop the proxy running in the background?**
+The proxy keeps running in a hidden window until you sign out of Windows or stop it:
 
 ```powershell
 Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
@@ -143,20 +146,20 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
   ForEach-Object { Stop-Process -Id $_.ProcessId }
 ```
 
-## Korlátok
+## Limitations
 
-- Csak Windowson működik (a TV-keresés Windows COM-objektumot használ, a proxy viszont bárhol futna).
-- Csak LG webOS TV-n teszteltem.
-- A gépnek és az Ace Stream motornak végig futnia kell, mert a TV a gépről kapja a streamet.
+- Windows only (finding the TV uses a Windows COM object; the proxy itself would run anywhere).
+- Only tested on an LG webOS TV.
+- The PC and the Ace Stream engine must keep running, because the TV gets the stream from the PC.
 
-## Jogi megjegyzés
+## Legal notice
 
-Ez a projekt csak egy hálózati segédeszköz, amivel a saját gépeden futó Ace Stream motor
-adását a saját TV-den nézheted. Nem tartalmaz és nem ajánl semmilyen adást vagy linket.
-Hogy mit nézel, és hogy ahhoz jogod van-e, az a te felelősséged.
+This project is just a network helper that lets you watch what the Ace Stream engine on your own
+PC is playing on your own TV. It contains and recommends no broadcasts or links.
+What you watch, and whether you have the right to watch it, is your responsibility.
 
-Az Ace Stream az Ace Stream fejlesztőinek terméke. Ez a projekt nem kapcsolódik hozzájuk.
+Ace Stream is a product of the Ace Stream developers. This project is not affiliated with them.
 
-## Licenc
+## License
 
-MIT – lásd [LICENSE](LICENSE).
+MIT – see [LICENSE](LICENSE).
