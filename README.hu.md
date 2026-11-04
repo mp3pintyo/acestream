@@ -153,9 +153,9 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
   - nem küld `HEAD` kérést, hanem a lejátszás előtt több rövid „próba” `GET`-et;
   - ha még az előző adás megy, a `SetAVTransportURI`-ra pár másodpercig `705 Transport locked` hibát ad,
     ezért ilyenkor a Stop után érdemes kicsit várni, vagy elküldeni még egyszer.
-- **[Fájl a TV-re](https://github.com/rknoise/fajl-a-tv-re)**: ugyanerre a DLNA-s módszerre épülő kis
-  ablakos program *helyi videófájlokhoz* (MP4 / MKV / AVI). Szükség esetén ffmpeg-gel alakít át,
-  és lehet benne tekerni.
+- **[TéVécske](https://github.com/rknoise/tevecske)**: ugyanerre a DLNA-s módszerre épülő program
+  *helyi videókhoz, zenékhez és fotókhoz*, telefonos távirányítóval. Szükség esetén ffmpeg-gel
+  alakít át, kezeli a feliratokat, és ott folytatja, ahol abbahagytad.
 
 ## Korlátok
 
