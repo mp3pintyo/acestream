@@ -146,6 +146,17 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
   ForEach-Object { Stop-Process -Id $_.ProcessId }
 ```
 
+## Tested TVs and related project
+
+- **LG OLED65C4** (webOS): the TV this project was built on.
+- **Philips 58PUS7805/12** (2020, Saphi): `cast-to-lgtv.ps1 -List` finds it, and an MPEG-TS stream
+  (H.264 + AAC test video) pushed over DLNA plays. Worth knowing:
+  - it sends no `HEAD` request, only several short probing `GET`s before playback;
+  - while the previous stream is still playing, `SetAVTransportURI` returns `705 Transport locked`
+    for a few seconds, so wait a moment after Stop or simply send it again.
+- **[TéVécske](https://github.com/rknoise/tevecske)**: built on the same DLNA approach for *local videos,
+  music and photos*, with a phone remote, subtitles, on-the-fly ffmpeg conversion and resume playback.
+
 ## Limitations
 
 - Windows only (finding the TV uses a Windows COM object; the proxy itself would run anywhere).

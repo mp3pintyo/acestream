@@ -145,6 +145,18 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
   ForEach-Object { Stop-Process -Id $_.ProcessId }
 ```
 
+## Kipróbált TV-k és kapcsolódó projekt
+
+- **LG OLED65C4** (webOS): ezen készült a projekt.
+- **Philips 58PUS7805/12** (2020-as, Saphi): a `cast-to-lgtv.ps1 -List` megtalálja, és a DLNA-n
+  ráküldött MPEG-TS stream (H.264 + AAC tesztvideó) lejátszása működik. Amit érdemes tudni róla:
+  - nem küld `HEAD` kérést, hanem a lejátszás előtt több rövid „próba” `GET`-et;
+  - ha még az előző adás megy, a `SetAVTransportURI`-ra pár másodpercig `705 Transport locked` hibát ad,
+    ezért ilyenkor a Stop után érdemes kicsit várni, vagy elküldeni még egyszer.
+- **[TéVécske](https://github.com/rknoise/tevecske)**: ugyanerre a DLNA-s módszerre épülő program
+  *helyi videókhoz, zenékhez és fotókhoz*, telefonos távirányítóval. Szükség esetén ffmpeg-gel
+  alakít át, kezeli a feliratokat, és ott folytatja, ahol abbahagytad.
+
 ## Korlátok
 
 - Csak Windowson működik (a TV-keresés Windows COM-objektumot használ, a proxy viszont bárhol futna).
